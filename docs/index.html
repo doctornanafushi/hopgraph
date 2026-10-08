@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta charset="utf-8">
+<title>HopGraph</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+body{background:linear-gradient(160deg,#0f1222,#1a1f3a);color:#eef1ff;width:1280px;height:720px;overflow:hidden;}
+.app{padding:20px 36px;}
+header{text-align:center;margin-bottom:14px;}
+h1{font-size:30px;background:linear-gradient(90deg,#7dd3fc,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.tag{color:#b7bde6;font-size:14px;margin-top:4px;}
+main{display:flex;gap:24px;}
+.left,.right{flex:1;}
+.form-card,.dashboard,.results,.detail{background:#181c33;border:1px solid #2b2f55;border-radius:12px;padding:16px;margin-bottom:16px;}
+h2{font-size:16px;margin-bottom:10px;color:#cdd3ff;}
+h3{font-size:14px;margin-bottom:10px;color:#b7bde6;}
+.field{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;color:#a9afdd;}
+.value{color:#fff;font-weight:600;}
+button{width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(90deg,#60a5fa,#a78bfa);color:#0d0f1f;font-weight:700;cursor:pointer;margin-top:6px;}
+button:hover{opacity:.9;}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;color:#c7cbf5;}
+.bar{height:10px;border-radius:5px;flex:1;background:#2b2f55;}
+.bar.naive{background:linear-gradient(90deg,#f87171,#fb923c);width:100%;}
+.bar.best{background:linear-gradient(90deg,#34d399,#60a5fa);width:56%;}
+.savings{margin-top:6px;font-size:13px;color:#86efac;font-weight:600;}
+.path{background:#1f2446;border:1px solid #30346a;border-radius:10px;padding:10px;margin-bottom:10px;cursor:pointer;position:relative;}
+.path.selected{border-color:#60a5fa;background:#242a55;}
+.badge{position:absolute;top:8px;right:10px;background:#34d399;color:#06281c;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;}
+.route{font-size:13px;color:#e4e7ff;}
+.meta{font-size:12px;color:#9aa0d8;margin-top:4px;}
+.breakdown{font-size:13px;color:#cfd3ff;line-height:1.8;}
+.total{font-weight:700;color:#fff;margin-top:4px;}
+.success{margin-top:10px;font-size:13px;color:#86efac;}
+footer{text-align:center;color:#6b7097;font-size:11px;margin-top:6px;}
+[hidden]{display:none;}
+</style>
+</head>
+<body>
+<div class="app" data-demo="app">
+  <header>
+    <h1>HopGraph</h1>
+    <p class="tag">Find the cheapest cross-chain path with real-time graph search, not guesswork</p>
+  </header>
+  <main>
+    <section class="left">
+      <div class="form-card">
+        <h2>Route Finder</h2>
+        <div class="field"><label>From</label><div class="value">Solana · USDC</div></div>
+        <div class="field"><label>To</label><div class="value">Arbitrum · USDC</div></div>
+        <div class="field"><label>Amount</label><div class="value">5,000 USDC</div></div>
+        <button data-demo="find-btn" onclick="findPaths()">Find Cheapest Path</button>
+      </div>
+      <div class="dashboard" data-demo="dashboard-panel" hidden>
+        <h3>Cost Comparison</h3>
+        <div class="bar-row"><span>Naive single bridge</span><div class="bar naive"></div><span>$14.50</span></div>
+        <div class="bar-row"><span>HopGraph best</span><div class="bar best"></div><span>$8.20</span></div>
+        <p class="savings" data-demo="savings-text">You save 43% vs naive route</p>
+      </div>
+    </section>
+    <section class="right">
+      <div class="results" data-demo="results-panel" hidden>
+        <h2>Top 3 Paths</h2>
+        <div class="path selected" data-demo="path-1" onclick="selectPath(1)">
+          <span class="badge">BEST</span>
+          <div class="route">Solana → Wormhole → Ethereum → deBridge → Arbitrum</div>
+          <div class="meta">Cost $8.20 · 3 min</div>
+        </div>
+        <div class="path" data-demo="path-2" onclick="selectPath(2)">
+          <div class="route">Solana → Jupiter → Wormhole → Base → Arbitrum</div>
+          <div class="meta">Cost $9.75 · 5 min</div>
+        </div>
+        <div class="path" data-demo="path-3" onclick="selectPath(3)">
+          <div class="route">Solana → deBridge → Arbitrum (direct)</div>
+          <div class="meta">Cost $14.50 · 2 min</div>
+        </div>
+      </div>
+      <div class="detail" data-demo="detail-panel" hidden>
+        <h3>Selected Route Breakdown</h3>
+        <div class="breakdown">
+          <div>Fee: <span id="fee">$3.10</span></div>
+          <div>Slippage: <span id="slip">$1.80</span></div>
+          <div>Gas: <span id="gas">$3.30</span></div>
+          <div class="total">Total: <span id="total">$8.20</span></div>
+        </div>
+        <button data-demo="execute-btn" onclick="executeRoute()">Execute Route</button>
+        <p class="success" data-demo="success-msg" hidden>✅ Route executed via Wormhole + deBridge + Jupiter. You saved $6.30 (43%) vs naive route.</p>
+      </div>
+    </section>
+  </main>
+  <footer>Prototype — all data is simulated</footer>
+</div>
+<script>
+function findPaths(){
+  document.querySelector('[data-demo="results-panel"]').hidden=false;
+  document.querySelector('[data-demo="dashboard-panel"]').hidden=false;
+  document.querySelector('[data-demo="detail-panel"]').hidden=false;
+  selectPath(1);
+}
+function selectPath(n){
+  document.querySelectorAll('.path').forEach(function(el,i){el.classList.toggle('selected', i+1===n);});
+  var data = {
+    1:{fee:'$3.10',slip:'$1.80',gas:'$3.30',total:'$8.20'},
+    2:{fee:'$4.00',slip:'$2.75',gas:'$3.00',total:'$9.75'},
+    3:{fee:'$6.00',slip:'$4.50',gas:'$4.00',total:'$14.50'}
+  }[n];
+  document.getElementById('fee').textContent=data.fee;
+  document.getElementById('slip').textContent=data.slip;
+  document.getElementById('gas').textContent=data.gas;
+  document.getElementById('total').textContent=data.total;
+  document.querySelector('[data-demo="success-msg"]').hidden=true;
+}
+function executeRoute(){
+  document.querySelector('[data-demo="success-msg"]').hidden=false;
+}
+</script>
+</body>
+</html>
